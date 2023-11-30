@@ -1,6 +1,5 @@
 const express = require("express");
 const cors = require("cors");
-const cookieParser = require("cookie-parser");
 const jwt = require("jsonwebtoken");
 
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
@@ -13,21 +12,15 @@ const app = express();
 const PORT = process.env.PORT || 4000;
 
 // middleware
-app.use(
-  cors({
-    origin: [process.env.CORS_ORIGIN],
-    credentials: true,
-  })
-);
+app.use(cors());
 
 app.use(express.json());
-app.use(cookieParser());
 
 const verifyToken = (req, res, next) => {
-  const token = req?.cookies?.token;
-  if (!token) {
+  if (!req.headers.authorization) {
     return res.status(401).send({ message: "unauthorized access" });
   }
+  const token = req.headers.authorization.split(" ")[1];
   jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
     if (err) {
       return res.status(401).send({ message: "unauthorized access" });
@@ -72,18 +65,7 @@ async function run() {
       const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {
         expiresIn: "2h",
       });
-
-      res
-        .cookie("token", token, {
-          httpOnly: true,
-          secure: true,
-          sameSite: "none",
-        })
-        .send({ success: true });
-    });
-
-    app.post("/logout", async (req, res) => {
-      res.clearCookie("token", { maxAge: 0 }).send({ success: true });
+      res.send(token);
     });
 
     // ============ USER Routes =================== //
