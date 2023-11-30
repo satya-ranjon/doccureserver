@@ -232,6 +232,23 @@ async function run() {
       res.send(result);
     });
 
+    app.get("/userTests", async (req, res) => {
+      const currentDate = new Date();
+      currentDate.setHours(0, 0, 0, 0);
+      const query = {
+        availableDate: { $gte: currentDate.toISOString() },
+      };
+      const page = req.query.page || 1;
+      const pageSize = req.query.pageSize || 6;
+      const totalTest = await testCollection.countDocuments();
+      const result = await testCollection
+        .find(query)
+        .skip((page - 1) * parseFloat(pageSize))
+        .limit(parseFloat(pageSize))
+        .toArray();
+      res.send({ data: result, totalTest: totalTest });
+    });
+
     app.get("/tests/:id", async (req, res) => {
       const query = { _id: new ObjectId(req.params.id) };
       const result = await testCollection.findOne(query);
